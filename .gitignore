@@ -1,0 +1,13 @@
+.DS_Store
+
+.idea
+*.iws
+*.iml
+*.ipr
+
+rest-server/target/
+
+web-client/node_modules
+web-client/build
+
+db/data

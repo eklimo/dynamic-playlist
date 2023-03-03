@@ -1,0 +1,8 @@
+FROM postgres:15.2-alpine
+
+ENV POSTGRES_USER $DB_USER
+ENV PGUSER $DB_USER
+ENV POSTGRES_PASSWORD $DB_PASSWORD
+ENV POSTGRES_DB $DB_NAME
+
+ADD setup.sql /docker-entrypoint-initdb.d/
