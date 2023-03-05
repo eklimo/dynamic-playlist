@@ -1,0 +1,9 @@
+services:
+  app-server:
+    container_name: app-server
+    image: arm64v8/eclipse-temurin:19
+    entrypoint: [ "java", "-jar", "/app.jar" ]
+    ports:
+      - 8080:8080
+    volumes:
+      - ./app-server/target/app-server.jar:/app.jar
