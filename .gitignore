@@ -9,3 +9,5 @@ app-server/target/
 
 web-client/node_modules
 web-client/build
+
+db/data

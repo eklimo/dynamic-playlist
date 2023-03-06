@@ -1,4 +1,21 @@
 services:
+  db:
+    container_name: $DB_HOSTNAME
+    image: postgres:15.2-alpine
+    ports:
+      - $DB_PORT:$DB_PORT
+    volumes:
+      - ./db/data:/var/lib/postgresql/data
+      - ./db/setup.sql:/docker-entrypoint-initdb.d/setup.sql
+    environment:
+      - POSTGRES_USER=$DB_USER
+      - POSTGRES_PASSWORD=$DB_PASSWORD
+      - POSTGRES_DB=$DB_NAME
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $DB_USER -d $DB_NAME" ]
+      interval: 3s
+      timeout: 5s
+      retries: 10
   app-server:
     container_name: app-server
     image: arm64v8/eclipse-temurin:19
