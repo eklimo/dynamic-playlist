@@ -7,3 +7,8 @@ services:
       - 8080:8080
     volumes:
       - ./app-server/target/app-server.jar:/app.jar
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --quiet http://app-server:8080/health || exit 1" ]
+      interval: 3s
+      timeout: 5s
+      retries: 10
