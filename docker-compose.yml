@@ -24,11 +24,16 @@ services:
       - 8080:8080
     volumes:
       - ./app-server/target/app-server.jar:/app.jar
+    env_file:
+      - .env
     healthcheck:
       test: [ "CMD-SHELL", "wget --quiet http://app-server:8080/health || exit 1" ]
       interval: 3s
       timeout: 5s
       retries: 10
+    depends_on:
+      db:
+        condition: service_healthy
   web-server:
     container_name: web-server
     image: nginx:1.23.3-alpine
