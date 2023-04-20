@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class HealthController {
   /** Returns a `200 OK` response, indicating that the server is healthy. */
-  @GetMapping("/health") fun healthCheck() = ResponseEntity.ok().build<Nothing>()
+  @GetMapping("/health") fun healthCheck() = ResponseEntity.ok().body(null)
 }
 
 fun main(args: Array<String>) {
