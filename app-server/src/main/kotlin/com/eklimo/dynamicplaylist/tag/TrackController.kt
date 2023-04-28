@@ -1,6 +1,8 @@
 package com.eklimo.dynamicplaylist.tag
 
 import arrow.core.Either
+import jakarta.validation.Valid
+import jakarta.validation.constraints.Positive
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -32,14 +34,14 @@ class TrackController(private val trackService: TrackService) {
     trackService.getTagsForTrack(userID, trackID)
 
   @PostMapping
-  fun addTagToTrack(@PathVariable trackID: String, @RequestBody req: AddTagRequest) =
+  fun addTagToTrack(@PathVariable trackID: String, @Valid @RequestBody req: AddTagRequest) =
     trackService.addTagToTrack(trackID, tagID = req.tagID).handleError()
 
-  data class AddTagRequest(val tagID: Long)
+  data class AddTagRequest(@field:Positive val tagID: Long)
 
   @DeleteMapping
-  fun removeTagFromTrack(@PathVariable trackID: String, @RequestBody req: RemoveTagRequest) =
+  fun removeTagFromTrack(@PathVariable trackID: String, @Valid @RequestBody req: RemoveTagRequest) =
     trackService.removeTagFromTrack(trackID, tagID = req.tagID).handleError()
 
-  data class RemoveTagRequest(val tagID: Long)
+  data class RemoveTagRequest(@field:Positive val tagID: Long)
 }

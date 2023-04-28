@@ -114,6 +114,26 @@ class TagControllerTests {
   }
 
   @Test
+  fun `create a tag using a malformed request - blank field`() {
+    val requestBody =
+      """
+        {
+          "userID": "$FAKE_USER_ID",
+          "name": "",
+          "color": "$FAKE_COLOR"
+        }
+      """
+        .trimIndent()
+
+    mockMvc
+      .post(ENDPOINT) {
+        contentType = MediaType.APPLICATION_JSON
+        content = requestBody
+      }
+      .andExpect { status { isBadRequest() } }
+  }
+
+  @Test
   fun `delete a tag`() {
     val expected = Unit
 
@@ -166,6 +186,25 @@ class TagControllerTests {
         content = mapper.writeValueAsString(requestBody)
       }
       .andExpect { status { isNotFound() } }
+  }
+
+  @Test
+  fun `update a tag using a malformed request - invalid color`() {
+    val requestBody =
+      """
+      {
+        "userID": "$FAKE_USER_ID",
+        "color": 0
+      }
+    """
+        .trimIndent()
+
+    mockMvc
+      .put("$ENDPOINT/$FAKE_TAG_ID") {
+        contentType = MediaType.APPLICATION_JSON
+        content = requestBody
+      }
+      .andExpect { status { isBadRequest() } }
   }
 
   @Test

@@ -1,6 +1,9 @@
 package com.eklimo.dynamicplaylist.tag
 
 import arrow.core.Either
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Positive
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -31,7 +34,7 @@ class TagController(private val tagService: TagService) {
   fun getTagByID(@PathVariable tagID: Long) = tagService.getTagByID(tagID).handleError()
 
   @PostMapping
-  fun createTag(@RequestBody req: CreateTagRequest) =
+  fun createTag(@Valid @RequestBody req: CreateTagRequest) =
     tagService
       .createTag(
         userID = req.userID,
@@ -42,9 +45,9 @@ class TagController(private val tagService: TagService) {
       .handleError()
 
   data class CreateTagRequest(
-    val userID: String,
-    val name: String,
-    val color: Int,
+    @field:NotBlank val userID: String,
+    @field:NotBlank val name: String,
+    @field:Positive val color: Int,
     val description: String = ""
   )
 
@@ -52,14 +55,14 @@ class TagController(private val tagService: TagService) {
   fun deleteTag(@PathVariable tagID: Long) = tagService.deleteTag(tagID).handleError()
 
   @PutMapping("/{tagID}")
-  fun updateTag(@PathVariable tagID: Long, @RequestBody req: UpdateTagRequest) =
+  fun updateTag(@PathVariable tagID: Long, @Valid @RequestBody req: UpdateTagRequest) =
     tagService
       .updateTag(tagID, name = req.name, color = req.color, description = req.description)
       .handleError()
 
   data class UpdateTagRequest(
     val name: String? = null,
-    val color: Int? = null,
+    @field:Positive val color: Int? = null,
     val description: String? = null
   )
 

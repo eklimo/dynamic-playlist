@@ -118,6 +118,23 @@ class TrackControllerTests {
   }
 
   @Test
+  fun `add a tag to a track using a malformed request`() {
+    val requestBody =
+      """
+        {
+        }
+      """
+        .trimIndent()
+
+    mockMvc
+      .post(ENDPOINT) {
+        contentType = MediaType.APPLICATION_JSON
+        content = requestBody
+      }
+      .andExpect { status { isBadRequest() } }
+  }
+
+  @Test
   fun `remove a tag from a track`() {
     val requestBody = TrackController.RemoveTagRequest(FAKE_TAG_ID)
 
@@ -166,5 +183,22 @@ class TrackControllerTests {
         content = mapper.writeValueAsString(requestBody)
       }
       .andExpect { status { isNotFound() } }
+  }
+
+  @Test
+  fun `remove a tag from a track using a malformed request`() {
+    val requestBody =
+      """
+        {
+        }
+      """
+        .trimIndent()
+
+    mockMvc
+      .delete(ENDPOINT) {
+        contentType = MediaType.APPLICATION_JSON
+        content = requestBody
+      }
+      .andExpect { status { isBadRequest() } }
   }
 }
