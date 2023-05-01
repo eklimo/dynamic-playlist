@@ -8,15 +8,18 @@ import com.eklimo.dynamicplaylist.tag.TagService
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.MediaType
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import org.springframework.web.bind.MethodArgumentNotValidException
 
 @WebMvcTest(controllers = [TagController::class])
 class TagControllerTests {
@@ -39,7 +42,7 @@ class TagControllerTests {
   fun `get a tag by id`() {
     val expected = TagService.GetTagResponse(Tag(FAKE_USER_ID, FAKE_NAME, FAKE_COLOR))
 
-    every { tagService.getTagByID(Tag.ID(FAKE_TAG_ID)) } returns expected.right()
+    every { tagService.getTagByID(FAKE_TAG_ID) } returns expected.right()
 
     mockMvc
       .get("$ENDPOINT/$FAKE_TAG_ID") { accept = MediaType.APPLICATION_JSON }
@@ -51,9 +54,9 @@ class TagControllerTests {
 
   @Test
   fun `get a tag that doesn't exist`() {
-    val expected = TagService.Error.NotFound(Tag.ID(FAKE_TAG_ID))
+    val expected = TagService.Error.NotFound(FAKE_TAG_ID)
 
-    every { tagService.getTagByID(Tag.ID(FAKE_TAG_ID)) } returns expected.left()
+    every { tagService.getTagByID(FAKE_TAG_ID) } returns expected.left()
 
     mockMvc
       .get("$ENDPOINT/$FAKE_TAG_ID") { accept = MediaType.APPLICATION_JSON }
@@ -64,7 +67,7 @@ class TagControllerTests {
   fun `create a tag`() {
     val requestBody = TagController.CreateTagRequest(FAKE_USER_ID, FAKE_NAME, FAKE_COLOR)
 
-    val expected = TagService.CreateTagResponse(Tag.ID(FAKE_TAG_ID))
+    val expected = TagService.CreateTagResponse(FAKE_TAG_ID)
 
     every { tagService.createTag(FAKE_USER_ID, FAKE_NAME, FAKE_COLOR) } returns expected.right()
 
@@ -96,21 +99,52 @@ class TagControllerTests {
   }
 
   @Test
-  fun `create a tag using a malformed request - missing fields`() {
+  fun `create a tag without a description`() {
     val requestBody =
       """
         {
-          "color": "$FAKE_COLOR"
+          "userID": "$FAKE_USER_ID",
+          "name": "$FAKE_NAME",
+          "color": $FAKE_COLOR
         }
       """
         .trimIndent()
+
+    val expected = TagService.CreateTagResponse(FAKE_TAG_ID)
+
+    every { tagService.createTag(FAKE_USER_ID, FAKE_NAME, FAKE_COLOR) } returns expected.right()
 
     mockMvc
       .post(ENDPOINT) {
         contentType = MediaType.APPLICATION_JSON
         content = requestBody
       }
-      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        status { isOk() }
+        content { string(mapper.writeValueAsString(expected)) }
+      }
+  }
+
+  @Test
+  fun `create a tag using a malformed request - missing fields`() {
+    val requestBody =
+      """
+        {
+          "color": $FAKE_COLOR
+        }
+      """
+        .trimIndent()
+
+    val result =
+      mockMvc
+        .post(ENDPOINT) {
+          contentType = MediaType.APPLICATION_JSON
+          content = requestBody
+        }
+        .andExpect { status { isBadRequest() } }
+        .andReturn()
+
+    assertInstanceOf(HttpMessageNotReadableException::class.java, result.resolvedException)
   }
 
   @Test
@@ -125,28 +159,32 @@ class TagControllerTests {
       """
         .trimIndent()
 
-    mockMvc
-      .post(ENDPOINT) {
-        contentType = MediaType.APPLICATION_JSON
-        content = requestBody
-      }
-      .andExpect { status { isBadRequest() } }
+    val result =
+      mockMvc
+        .post(ENDPOINT) {
+          contentType = MediaType.APPLICATION_JSON
+          content = requestBody
+        }
+        .andExpect { status { isBadRequest() } }
+        .andReturn()
+
+    assertInstanceOf(MethodArgumentNotValidException::class.java, result.resolvedException)
   }
 
   @Test
   fun `delete a tag`() {
     val expected = Unit
 
-    every { tagService.deleteTag(Tag.ID(FAKE_TAG_ID)) } returns expected.right()
+    every { tagService.deleteTag(FAKE_TAG_ID) } returns expected.right()
 
     mockMvc.delete("$ENDPOINT/$FAKE_TAG_ID").andExpect { status { isOk() } }
   }
 
   @Test
   fun `delete a tag that doesn't exist`() {
-    val expected = TagService.Error.NotFound(Tag.ID(FAKE_TAG_ID))
+    val expected = TagService.Error.NotFound(FAKE_TAG_ID)
 
-    every { tagService.deleteTag(Tag.ID(FAKE_TAG_ID)) } returns expected.left()
+    every { tagService.deleteTag(FAKE_TAG_ID) } returns expected.left()
 
     mockMvc.delete("$ENDPOINT/$FAKE_TAG_ID").andExpect { status { isNotFound() } }
   }
@@ -158,7 +196,7 @@ class TagControllerTests {
 
     val expected = Unit
 
-    every { tagService.updateTag(Tag.ID(FAKE_TAG_ID), color = newColor) } returns expected.right()
+    every { tagService.updateTag(FAKE_TAG_ID, color = newColor) } returns expected.right()
 
     mockMvc
       .put("$ENDPOINT/$FAKE_TAG_ID") {
@@ -176,9 +214,9 @@ class TagControllerTests {
     val newColor = FAKE_COLOR + 1
     val requestBody = TagController.UpdateTagRequest(color = newColor)
 
-    val expected = TagService.Error.NotFound(Tag.ID(FAKE_TAG_ID))
+    val expected = TagService.Error.NotFound(FAKE_TAG_ID)
 
-    every { tagService.updateTag(Tag.ID(FAKE_TAG_ID), color = newColor) } returns expected.left()
+    every { tagService.updateTag(FAKE_TAG_ID, color = newColor) } returns expected.left()
 
     mockMvc
       .put("$ENDPOINT/$FAKE_TAG_ID") {
@@ -199,17 +237,21 @@ class TagControllerTests {
     """
         .trimIndent()
 
-    mockMvc
-      .put("$ENDPOINT/$FAKE_TAG_ID") {
-        contentType = MediaType.APPLICATION_JSON
-        content = requestBody
-      }
-      .andExpect { status { isBadRequest() } }
+    val result =
+      mockMvc
+        .put("$ENDPOINT/$FAKE_TAG_ID") {
+          contentType = MediaType.APPLICATION_JSON
+          content = requestBody
+        }
+        .andExpect { status { isBadRequest() } }
+        .andReturn()
+
+    assertInstanceOf(MethodArgumentNotValidException::class.java, result.resolvedException)
   }
 
   @Test
   fun `get a user's tags`() {
-    val expected = TagService.TagsForUserResponse(listOf(Tag.ID(FAKE_TAG_ID)))
+    val expected = TagService.TagsForUserResponse(listOf(FAKE_TAG_ID))
 
     every { tagService.getTagsForUser(FAKE_USER_ID) } returns expected
 
