@@ -30,7 +30,7 @@ class TagService(private val tagRepository: TagRepository) {
     userID: String,
     name: String,
     color: Int,
-    description: String = ""
+    description: String? = null
   ): Either<Error.NameAlreadyExists, CreateTagResponse> = either {
     ensure(tagRepository.findByUserIDAndName(userID, name) == null) {
       Error.NameAlreadyExists(userID, name)

@@ -48,7 +48,7 @@ class TagController(private val tagService: TagService) {
     @field:NotBlank val userID: String,
     @field:NotBlank val name: String,
     @field:Positive val color: Int,
-    val description: String = ""
+    val description: String? = null
   )
 
   @DeleteMapping("/{tagID}")
