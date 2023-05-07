@@ -1,0 +1,14 @@
+.table-row {
+    transition-duration: 0.2s;
+}
+
+.table-row .add-button {
+    transition-property: visibility, opacity;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.table-row:hover .add-button {
+    visibility: visible;
+    opacity: 1;
+}
