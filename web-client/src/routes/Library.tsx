@@ -16,6 +16,7 @@ import {
   UpdateTagRequest
 } from '../fetch';
 import React, { useMemo } from 'react';
+import TrackTable, { TrackWithTags } from '../components/TrackTable';
 
 const STALE_TIME = 1000 * 60 * 5;
 
@@ -129,9 +130,19 @@ export default function Library() {
     }
   });
 
+  const tracksWithTags = useMemo(() =>
+      savedTracksQuery.data?.items
+        ?.map(track => ({
+          ...track,
+          tags: tagsForTrack.get(track.trackID)?.map(tagID => tags.get(tagID)!) ?? []
+        } satisfies TrackWithTags)) ?? []
+    , [savedTracksQuery.data, tagsForTrack, tags]);
+
   return (
     <>
       <Heading fontSize='3xl' fontWeight='semibold' pb='25px'>Library</Heading>
+
+      <TrackTable tracks={tracksWithTags} />
     </>
   );
 }
