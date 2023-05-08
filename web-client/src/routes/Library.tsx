@@ -15,7 +15,7 @@ import {
   RemoveTagFromTrackRequest,
   UpdateTagRequest
 } from '../fetch';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 const STALE_TIME = 1000 * 60 * 5;
 
@@ -54,6 +54,14 @@ export default function Library() {
     ))
   });
 
+  const tags = useMemo(() =>
+      new Map(
+        tagQueries
+          .map(query => query.data)
+          .map(tag => [tag?.tagID, tag])
+      )
+    , [tagQueries]);
+
   const tagsForTrackQueries = useQueries({
     queries: ((savedTracksQuery.data?.items ?? []).map(track => ({
       queryKey: ['tagsForTrack', track.trackID],
@@ -71,6 +79,14 @@ export default function Library() {
       enabled: !!userProfileQuery.data
     })))
   });
+
+  const tagsForTrack = useMemo(() =>
+      new Map(
+        tagsForTrackQueries
+          .map(query => query.data)
+          .map(obj => [obj?.trackID, obj?.tagIDs])
+      )
+    , [tagsForTrackQueries]);
 
   const createTagMutation = useMutation({
     mutationFn: () => {
