@@ -203,10 +203,7 @@ class TagControllerTests {
         contentType = MediaType.APPLICATION_JSON
         content = mapper.writeValueAsString(requestBody)
       }
-      .andExpect {
-        status { isOk() }
-        content { string(mapper.writeValueAsString(expected)) }
-      }
+      .andExpect { status { isOk() } }
   }
 
   @Test

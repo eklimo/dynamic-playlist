@@ -24,7 +24,7 @@ class TagService(private val tagRepository: TagRepository) {
     GetTagResponse(tag)
   }
 
-  data class GetTagResponse(val tag: Tag)
+  @JvmInline value class GetTagResponse(val tag: Tag)
 
   fun createTag(
     userID: String,
