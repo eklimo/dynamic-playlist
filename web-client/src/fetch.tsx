@@ -85,6 +85,13 @@ export async function fetchTag(tagID: number): Promise<GetTagResponse> {
 
 //
 
+export interface CreateTagRequest {
+  userID: string,
+  name: string,
+  color: number,
+  description?: string
+}
+
 interface CreateTagResponse {
   tagID: number;
 }
@@ -94,7 +101,8 @@ const mutateCreateTagURL = () => {
   return url.href;
 };
 
-export async function mutateCreateTag(userID: string, name: string, color: number, description?: string): Promise<CreateTagResponse> {
+export async function mutateCreateTag({ userID, name, color, description }: CreateTagRequest)
+  : Promise<CreateTagResponse> {
   const response = await fetch(mutateCreateTagURL(), {
     method: 'post',
     headers: {

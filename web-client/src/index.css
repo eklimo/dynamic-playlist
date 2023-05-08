@@ -1,22 +1,22 @@
-.tag .tag-close {
+.removeable-tag .tag-close {
     transition-property: visibility, opacity;
     transition-duration: 0.2s;
     visibility: hidden;
     opacity: 0;
 }
 
-.tag:hover .tag-close {
+.removeable-tag:hover .tag-close {
     visibility: visible;
     opacity: 1;
 }
 
-.tag .tag-label {
+.removeable-tag .removeable-tag-label {
     transition-property: transform;
     transition-duration: 0.2s;
     transform: translateX(0.625rem);
 }
 
-.tag:hover .tag-label {
+.removeable-tag:hover .removeable-tag-label {
     transform: none;
 }
 
@@ -33,4 +33,18 @@
 .table-row:hover .add-button {
     visibility: visible;
     opacity: 1;
+}
+
+.color-circle {
+    transition-duration: 0.2s;
+    transition-property: filter;
+}
+
+.color-circle:hover {
+    filter: brightness(125%);
+    cursor: pointer;
+}
+
+.color-circle:active {
+    filter: brightness(140%);
 }

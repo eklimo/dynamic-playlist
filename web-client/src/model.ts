@@ -1,5 +1,5 @@
 export interface Track {
-  trackID: string,
+  id: string,
   name: string,
   album: Album,
   artists: string[]

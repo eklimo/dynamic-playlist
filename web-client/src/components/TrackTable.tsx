@@ -1,9 +1,8 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, RefObject, useMemo, useRef } from 'react';
 import {
   HStack,
   IconButton,
   Image,
-  Input,
   Popover,
   PopoverArrow,
   PopoverBody,
@@ -25,6 +24,7 @@ import { Cell, createColumnHelper, flexRender, getCoreRowModel, useReactTable } 
 import { Album, Tag, Track } from '../model';
 import { AddIcon } from '@chakra-ui/icons';
 import { RemoveableTag } from './TrackTag';
+import TagAutocomplete from './TagAutocomplete';
 
 type RowType = {
   index: number
@@ -72,7 +72,11 @@ const AlbumCell = memo(({ album }: { album: Album }) => (
   <>{album.name}</>
 ));
 
-const TagsCell = memo(({ tags, removeTag }: { tags: Tag[]; removeTag: (tag: Tag) => void }) => {
+const TagsCell = memo(({ tags, selectTag, removeTag }: {
+  tags: Tag[]
+  selectTag: (tag: Tag) => void
+  removeTag: (tag: Tag) => void
+}) => {
   const sortedTags = useMemo(
     () =>
       tags.sort(
@@ -82,13 +86,15 @@ const TagsCell = memo(({ tags, removeTag }: { tags: Tag[]; removeTag: (tag: Tag)
     [tags]
   );
 
+  const initialFocusRef: RefObject<any> = useRef();
+
   return (
     <HStack spacing='8px'>
       {sortedTags.map(tag => (
         <RemoveableTag key={tag.tagID} tag={tag} onRemove={removeTag} />
       ))}
       <WrapItem>
-        <Popover>
+        <Popover initialFocusRef={initialFocusRef}>
           <PopoverTrigger>
             <IconButton
               className='add-button'
@@ -101,7 +107,7 @@ const TagsCell = memo(({ tags, removeTag }: { tags: Tag[]; removeTag: (tag: Tag)
           <PopoverContent>
             <PopoverArrow />
             <PopoverBody p='2px'>
-              <Input placeholder='Add a tag' />
+              <TagAutocomplete initialFocusRef={initialFocusRef} selectTag={selectTag} />
             </PopoverBody>
           </PopoverContent>
         </Popover>
@@ -139,10 +145,11 @@ const TrackTableRow = memo(({ cells }: TrackTableRowProps) => {
 
 interface TrackTableProps {
   tracks: TrackWithTags[];
+  addTagToTrack: (tag: Tag, trackID: string) => void;
   removeTagFromTrack: (tag: Tag, trackID: string) => void;
 }
 
-export default function TrackTable({ tracks, removeTagFromTrack }: TrackTableProps) {
+export default function TrackTable({ tracks, addTagToTrack, removeTagFromTrack }: TrackTableProps) {
   const columns = useMemo(
     () => [
       columnHelper.accessor('index', {
@@ -166,14 +173,15 @@ export default function TrackTable({ tracks, removeTagFromTrack }: TrackTablePro
       columnHelper.accessor('tags', {
         header: 'Tags',
         cell: props => {
-          const removeTag = (tag: Tag) => removeTagFromTrack(tag, props.getValue().trackID);
+          const selectTag = (tag: Tag) => addTagToTrack(tag, props.getValue().id);
+          const removeTag = (tag: Tag) => removeTagFromTrack(tag, props.getValue().id);
           return (
-            <TagsCell tags={props.getValue().tags} removeTag={removeTag} />
+            <TagsCell tags={props.getValue().tags} selectTag={selectTag} removeTag={removeTag} />
           );
         }
       })
     ],
-    []
+    [addTagToTrack, removeTagFromTrack]
   );
 
   const tableData = useMemo(() => tracks.map(trackToRow), [tracks]);
