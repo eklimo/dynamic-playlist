@@ -25,6 +25,7 @@ import {
 import { Cell, createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Album, Tag, Track } from '../model';
 import { AddIcon } from '@chakra-ui/icons';
+import { RemoveableTag } from './TrackTag';
 
 type RowType = {
   index: number
@@ -99,7 +100,7 @@ const TagsCell = memo(({ tags }: { tags: Tag[] }) => {
   return (
     <HStack spacing='8px'>
       {sortedTags.map(tag => (
-        <Text key={tag.tagID}>{tag.name}</Text>
+        <RemoveableTag key={tag.tagID} tag={tag} onRemove={removeTag} />
       ))}
       <WrapItem>
         <Popover>

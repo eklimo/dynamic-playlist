@@ -1,3 +1,25 @@
+.tag .tag-close {
+    transition-property: visibility, opacity;
+    transition-duration: 0.2s;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.tag:hover .tag-close {
+    visibility: visible;
+    opacity: 1;
+}
+
+.tag .tag-label {
+    transition-property: transform;
+    transition-duration: 0.2s;
+    transform: translateX(0.625rem);
+}
+
+.tag:hover .tag-label {
+    transform: none;
+}
+
 .table-row {
     transition-duration: 0.2s;
 }
