@@ -1,4 +1,4 @@
-import { Box, Input, List, ListItem } from '@chakra-ui/react';
+import { Box, Input, List, ListItem, VStack } from '@chakra-ui/react';
 import React, { memo, RefObject, useCallback, useContext, useMemo, useState } from 'react';
 import { useCombobox } from 'downshift';
 import { Tag } from '../model';
@@ -47,7 +47,8 @@ const TagAutocomplete = memo(({ initialFocusRef, selectTag }: {
     onSelectedItemChange: ({ selectedItem }) => selectedItem && selectTag(selectedItem),
     onIsOpenChange: () => {
       setInputValue('');
-    }
+    },
+    itemToString: item => item?.name ?? ''
   });
 
   const openModal = useContext(OpenModalContext);
@@ -56,16 +57,20 @@ const TagAutocomplete = memo(({ initialFocusRef, selectTag }: {
     <Box>
       <Input placeholder='Add a tag' {...getInputProps({ ref: initialFocusRef })} />
       <List className={isOpen && items.length > 0 ? '' : 'hidden'}  {...getMenuProps()}>
-        {isOpen && items.map((item, index) => (
-          <ListItem key={item.tagID}  {...getItemProps({ item, index })}>
-            <NormalTag key={item.tagID} tag={item} />
-          </ListItem>
-        ))}
-        {isOpen && isCreateNewVisible && (
-          <ListItem onClick={openModal}>
-            Create new tag...
-          </ListItem>
-        )}
+        <VStack py='5px' spacing='2px' align={'start'}>
+          {isOpen && items.map((item, index) => (
+            <ListItem key={item.tagID}  {...getItemProps({ item, index })} style={{
+              cursor: 'pointer'
+            }}>
+              <NormalTag key={item.tagID} tag={item} />
+            </ListItem>
+          ))}
+          {isOpen && isCreateNewVisible && (
+            <ListItem onClick={openModal}>
+              Create new tag...
+            </ListItem>
+          )}
+        </VStack>
       </List>
     </Box>
   );

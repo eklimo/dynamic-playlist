@@ -1,4 +1,4 @@
-import { Box, Button, Divider, Flex, Link, Spacer, Text } from '@chakra-ui/react';
+import { Box, Button, Divider, Flex, HStack, Link, Spacer, Text } from '@chakra-ui/react';
 import { ColorModeSwitcher } from './ColorModeSwitcher';
 import { Link as RouterLink, Outlet } from 'react-router-dom';
 import { clearAuthorization } from '../authorization';
@@ -15,15 +15,16 @@ export default function Navbar() {
           <Text fontSize='3xl' fontWeight='bold'>
             Dynamic Playlist
           </Text>
-          <Link as={RouterLink} to='/'>Library</Link>
-          <Link as={RouterLink} to='/generate'>Generate</Link>
+          <HStack px='30px' spacing='30px'>
+            <Link as={RouterLink} to='/'>Library</Link>
+            <Link as={RouterLink} to='/generate'>Generate</Link>
+          </HStack>
           <Spacer />
           {authorizationState ? (
             <Button onClick={() => clearAuthorization()}>Sign out</Button>
           ) : (
             <Link href='http://localhost:8080/authorize'>Sign in</Link>
           )}
-          <Spacer />
           <ColorModeSwitcher />
         </Flex>
       </Box>
