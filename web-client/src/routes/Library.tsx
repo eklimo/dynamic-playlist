@@ -1,4 +1,4 @@
-import { Heading } from '@chakra-ui/react';
+import { Heading, useToast, UseToastOptions } from '@chakra-ui/react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AddTagToTrackRequest,
@@ -15,9 +15,10 @@ import {
   RemoveTagFromTrackRequest,
   UpdateTagRequest
 } from '../fetch';
-import React, { useContext, useMemo } from 'react';
+import React, { useCallback, useContext, useMemo } from 'react';
 import TrackTable, { TrackWithTags } from '../components/TrackTable';
 import { AuthorizationContext } from '../AuthorizationContext';
+import { Tag } from '../model';
 
 const STALE_TIME = 1000 * 60 * 5;
 
@@ -25,6 +26,16 @@ export default function Library() {
   const queryClient = useQueryClient();
 
   const authorizationState = useContext(AuthorizationContext);
+
+  const toast = useToast();
+  const doToast = useCallback((options: UseToastOptions) => {
+    toast({
+      status: 'success',
+      isClosable: true,
+      position: 'top',
+      ...options
+    });
+  }, [toast]);
 
   const offset = 0;
   const limit = 50;
@@ -129,10 +140,21 @@ export default function Library() {
 
   const removeTagFromTrackMutation = useMutation({
     mutationFn: (request: RemoveTagFromTrackRequest) => mutateRemoveTagFromTrack(request),
-    onSuccess: (response, { trackID }: RemoveTagFromTrackRequest) => {
+    onSuccess: (response, { trackID, tagID }: RemoveTagFromTrackRequest) => {
+      doToast({
+        title: `Removed tag ${tags.get(tagID)!.name}`
+      });
+
       queryClient.invalidateQueries(['tagsForTrack', trackID]);
     }
   });
+
+  const removeTagFromTrack = useCallback((tag: Tag, trackID: string) => {
+    removeTagFromTrackMutation.mutate({
+      trackID,
+      tagID: tag.tagID
+    });
+  }, []);
 
   const tracksWithTags = useMemo(() =>
       savedTracksQuery.data?.items
@@ -146,7 +168,7 @@ export default function Library() {
     <>
       <Heading fontSize='3xl' fontWeight='semibold' pb='25px'>Library</Heading>
 
-      <TrackTable tracks={tracksWithTags} />
+      <TrackTable tracks={tracksWithTags} removeTagFromTrack={removeTagFromTrack} />
     </>
   );
 }

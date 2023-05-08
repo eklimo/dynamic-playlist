@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import {
   HStack,
   IconButton,
@@ -19,7 +19,6 @@ import {
   Thead,
   Tr,
   useColorModeValue,
-  useToast,
   WrapItem
 } from '@chakra-ui/react';
 import { Cell, createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
@@ -31,7 +30,7 @@ type RowType = {
   index: number
   main: TrackWithTags
   album: Album
-  tags: Tag[]
+  tags: TrackWithTags
 }
 const columnHelper = createColumnHelper<RowType>();
 
@@ -39,7 +38,7 @@ const trackToRow = (track: TrackWithTags, index: number): RowType => ({
   index,
   main: track,
   album: track.album,
-  tags: track.tags
+  tags: track
 });
 
 export interface TrackWithTags extends Track {
@@ -73,21 +72,7 @@ const AlbumCell = memo(({ album }: { album: Album }) => (
   <>{album.name}</>
 ));
 
-const TagsCell = memo(({ tags }: { tags: Tag[] }) => {
-  const toast = useToast();
-
-  const removeTag = useCallback(
-    (tag: Tag) => {
-      toast({
-        title: `Removed tag ${tag.name}`,
-        status: 'success',
-        isClosable: true,
-        position: 'top'
-      });
-    },
-    [toast]
-  );
-
+const TagsCell = memo(({ tags, removeTag }: { tags: Tag[]; removeTag: (tag: Tag) => void }) => {
   const sortedTags = useMemo(
     () =>
       tags.sort(
@@ -154,9 +139,10 @@ const TrackTableRow = memo(({ cells }: TrackTableRowProps) => {
 
 interface TrackTableProps {
   tracks: TrackWithTags[];
+  removeTagFromTrack: (tag: Tag, trackID: string) => void;
 }
 
-export default function TrackTable({ tracks }: TrackTableProps) {
+export default function TrackTable({ tracks, removeTagFromTrack }: TrackTableProps) {
   const columns = useMemo(
     () => [
       columnHelper.accessor('index', {
@@ -179,9 +165,12 @@ export default function TrackTable({ tracks }: TrackTableProps) {
       }),
       columnHelper.accessor('tags', {
         header: 'Tags',
-        cell: props => (
-          <TagsCell tags={props.getValue()} />
-        )
+        cell: props => {
+          const removeTag = (tag: Tag) => removeTagFromTrack(tag, props.getValue().trackID);
+          return (
+            <TagsCell tags={props.getValue().tags} removeTag={removeTag} />
+          );
+        }
       })
     ],
     []
