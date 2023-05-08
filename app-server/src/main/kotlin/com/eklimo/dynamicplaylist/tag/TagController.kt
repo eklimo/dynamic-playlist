@@ -1,11 +1,10 @@
 package com.eklimo.dynamicplaylist.tag
 
-import arrow.core.Either
+import com.eklimo.dynamicplaylist.ControllerBase
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Positive
 import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -18,20 +17,16 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/v1/tags")
-class TagController(private val tagService: TagService) {
+class TagController(private val tagService: TagService) : ControllerBase<TagService.Error> {
 
-  private val TagService.Error.status
-    get() =
-      when (this) {
-        is TagService.Error.NotFound -> HttpStatus.NOT_FOUND
-        is TagService.Error.NameAlreadyExists -> HttpStatus.CONFLICT
-      }
-
-  private fun <A : TagService.Error, B> Either<A, B>.handleError() =
-    fold(ifRight = { it }, ifLeft = { error -> ResponseEntity.status(error.status).body(null) })
+  override fun statusOf(error: TagService.Error) =
+    when (error) {
+      is TagService.Error.NotFound -> HttpStatus.NOT_FOUND
+      is TagService.Error.NameAlreadyExists -> HttpStatus.CONFLICT
+    }
 
   @GetMapping("/{tagID}")
-  fun getTagByID(@PathVariable tagID: Long) = tagService.getTagByID(tagID).handleError()
+  fun getTagByID(@PathVariable tagID: Long) = tagService.getTagByID(tagID).formatOutput()
 
   @PostMapping
   fun createTag(@Valid @RequestBody req: CreateTagRequest) =
@@ -42,7 +37,7 @@ class TagController(private val tagService: TagService) {
         color = req.color,
         description = req.description
       )
-      .handleError()
+      .formatOutput()
 
   data class CreateTagRequest(
     @field:NotBlank val userID: String,
@@ -52,13 +47,13 @@ class TagController(private val tagService: TagService) {
   )
 
   @DeleteMapping("/{tagID}")
-  fun deleteTag(@PathVariable tagID: Long) = tagService.deleteTag(tagID).handleError()
+  fun deleteTag(@PathVariable tagID: Long) = tagService.deleteTag(tagID).formatOutput()
 
   @PutMapping("/{tagID}")
   fun updateTag(@PathVariable tagID: Long, @Valid @RequestBody req: UpdateTagRequest) =
     tagService
       .updateTag(tagID, name = req.name, color = req.color, description = req.description)
-      .handleError()
+      .formatOutput()
 
   data class UpdateTagRequest(
     val name: String? = null,

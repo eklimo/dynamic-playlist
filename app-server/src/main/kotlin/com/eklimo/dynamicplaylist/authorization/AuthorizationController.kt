@@ -1,10 +1,9 @@
 package com.eklimo.dynamicplaylist.authorization
 
-import arrow.core.Either
 import arrow.core.raise.either
+import com.eklimo.dynamicplaylist.ControllerBase
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -15,20 +14,17 @@ import org.springframework.web.bind.annotation.RequestMapping
  */
 @Controller
 @RequestMapping("/authorize")
-class AuthorizationController(private val authorizationService: AuthorizationService) {
+class AuthorizationController(private val authorizationService: AuthorizationService) :
+  ControllerBase<AuthorizationService.Error> {
 
-  private val AuthorizationService.Error.status
-    get() =
-      when (this) {
-        // TODO
-        is AuthorizationService.Error.InvalidOAuthState -> HttpStatus.INTERNAL_SERVER_ERROR
-        is AuthorizationService.Error.AccessDenied -> HttpStatus.INTERNAL_SERVER_ERROR
-        is AuthorizationService.Error.AuthorizationFailed -> HttpStatus.INTERNAL_SERVER_ERROR
-        is AuthorizationService.Error.Unknown -> HttpStatus.INTERNAL_SERVER_ERROR
-      }
-
-  private fun <A : AuthorizationService.Error, B> Either<A, B>.handleError() =
-    fold(ifRight = { it }, ifLeft = { error -> ResponseEntity.status(error.status).body(null) })
+  override fun statusOf(error: AuthorizationService.Error) =
+    when (error) {
+      // TODO
+      is AuthorizationService.Error.InvalidOAuthState -> HttpStatus.INTERNAL_SERVER_ERROR
+      is AuthorizationService.Error.AccessDenied -> HttpStatus.INTERNAL_SERVER_ERROR
+      is AuthorizationService.Error.AuthorizationFailed -> HttpStatus.INTERNAL_SERVER_ERROR
+      is AuthorizationService.Error.Unknown -> HttpStatus.INTERNAL_SERVER_ERROR
+    }
 
   /**
    * Step 1 ([response] is `null`): Redirects to the
@@ -55,5 +51,5 @@ class AuthorizationController(private val authorizationService: AuthorizationSer
           "redirect:$redirectURI"
         }
       }
-      .handleError()
+      .formatOutput()
 }

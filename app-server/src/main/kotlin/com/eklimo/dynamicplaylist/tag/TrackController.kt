@@ -1,10 +1,9 @@
 package com.eklimo.dynamicplaylist.tag
 
-import arrow.core.Either
+import com.eklimo.dynamicplaylist.ControllerBase
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Positive
 import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -16,18 +15,14 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/v1/tracks/{trackID}")
-class TrackController(private val trackService: TrackService) {
+class TrackController(private val trackService: TrackService) : ControllerBase<TrackService.Error> {
 
-  private val TrackService.Error.status
-    get() =
-      when (this) {
-        is TrackService.Error.NotFound -> HttpStatus.NOT_FOUND
-        is TrackService.Error.TrackHasTag -> HttpStatus.CONFLICT
-        is TrackService.Error.TrackHasNoTag -> HttpStatus.NOT_FOUND
-      }
-
-  private fun <A : TrackService.Error, B> Either<A, B>.handleError() =
-    fold(ifRight = { it }, ifLeft = { error -> ResponseEntity.status(error.status).body(null) })
+  override fun statusOf(error: TrackService.Error) =
+    when (error) {
+      is TrackService.Error.NotFound -> HttpStatus.NOT_FOUND
+      is TrackService.Error.TrackHasTag -> HttpStatus.CONFLICT
+      is TrackService.Error.TrackHasNoTag -> HttpStatus.NOT_FOUND
+    }
 
   @GetMapping
   fun getTagsForTrack(@PathVariable trackID: String, @RequestParam("user") userID: String) =
@@ -35,13 +30,13 @@ class TrackController(private val trackService: TrackService) {
 
   @PostMapping
   fun addTagToTrack(@PathVariable trackID: String, @Valid @RequestBody req: AddTagRequest) =
-    trackService.addTagToTrack(trackID, tagID = req.tagID).handleError()
+    trackService.addTagToTrack(trackID, tagID = req.tagID).formatOutput()
 
   data class AddTagRequest(@field:Positive val tagID: Long)
 
   @DeleteMapping
   fun removeTagFromTrack(@PathVariable trackID: String, @Valid @RequestBody req: RemoveTagRequest) =
-    trackService.removeTagFromTrack(trackID, tagID = req.tagID).handleError()
+    trackService.removeTagFromTrack(trackID, tagID = req.tagID).formatOutput()
 
   data class RemoveTagRequest(@field:Positive val tagID: Long)
 }
