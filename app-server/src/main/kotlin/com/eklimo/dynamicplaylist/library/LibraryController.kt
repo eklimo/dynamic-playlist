@@ -2,6 +2,7 @@ package com.eklimo.dynamicplaylist.library
 
 import com.eklimo.dynamicplaylist.ControllerBase
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/v1/library")
+@CrossOrigin(origins = ["http://localhost:8081"])
 class LibraryController(private val libraryService: LibraryService) :
   ControllerBase<LibraryService.Error> {
 
