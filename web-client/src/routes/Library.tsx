@@ -15,28 +15,32 @@ import {
   RemoveTagFromTrackRequest,
   UpdateTagRequest
 } from '../fetch';
-import React, { useMemo } from 'react';
+import React, { useContext, useMemo } from 'react';
 import TrackTable, { TrackWithTags } from '../components/TrackTable';
+import { AuthorizationContext } from '../AuthorizationContext';
 
 const STALE_TIME = 1000 * 60 * 5;
 
 export default function Library() {
   const queryClient = useQueryClient();
 
-  const accessToken = 'abc123';
+  const authorizationState = useContext(AuthorizationContext);
+
   const offset = 0;
   const limit = 50;
 
   const userProfileQuery = useQuery({
     queryKey: ['userProfile'],
-    queryFn: () => fetchUserProfile(accessToken),
-    staleTime: STALE_TIME
+    queryFn: () => fetchUserProfile(authorizationState!.accessToken),
+    staleTime: STALE_TIME,
+    enabled: !!authorizationState
   });
 
   const savedTracksQuery = useQuery({
     queryKey: ['savedTracks'],
-    queryFn: () => fetchSavedTracks(accessToken, offset, limit),
-    staleTime: STALE_TIME
+    queryFn: () => fetchSavedTracks(authorizationState!.accessToken, offset, limit),
+    staleTime: STALE_TIME,
+    enabled: !!authorizationState
   });
 
   const tagsForUserQuery = useQuery({
