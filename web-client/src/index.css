@@ -20,6 +20,10 @@
     transform: none;
 }
 
+.tag {
+    user-select: none;
+}
+
 .table-row {
     transition-duration: 0.2s;
 }

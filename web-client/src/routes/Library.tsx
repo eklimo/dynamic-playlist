@@ -27,9 +27,9 @@ import { OpenModalContext } from '../OpenModalContext';
 const STALE_TIME = 1000 * 60 * 5;
 
 export default function Library() {
-  const queryClient = useQueryClient();
-
   const authorizationState = useContext(AuthorizationContext);
+
+  const queryClient = useQueryClient();
 
   const toast = useToast();
   const doToast = useCallback((options: UseToastOptions) => {

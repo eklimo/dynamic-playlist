@@ -1,10 +1,11 @@
-import { Tag, Track } from './model';
+import FilterMode from './filterMode';
+import { Image, Tag, Track } from './model';
 
 const apiPath = 'http://localhost:8080/api/v1';
 
 //
 
-interface UserProfileResponse {
+export interface UserProfileResponse {
   id: string;
   displayName: string;
 }
@@ -26,7 +27,7 @@ export async function fetchUserProfile(accessToken: string): Promise<UserProfile
 
 //
 
-interface SavedTracksResponse {
+export interface SavedTracksResponse {
   total: number,
   items: Track[]
 }
@@ -50,7 +51,7 @@ export async function fetchSavedTracks(accessToken: string, offset: number, limi
 
 //
 
-interface TagsForUserResponse {
+export interface TagsForUserResponse {
   tagIDs: number[];
 }
 
@@ -92,7 +93,7 @@ export interface CreateTagRequest {
   description?: string
 }
 
-interface CreateTagResponse {
+export interface CreateTagResponse {
   tagID: number;
 }
 
@@ -101,16 +102,14 @@ const mutateCreateTagURL = () => {
   return url.href;
 };
 
-export async function mutateCreateTag({ userID, name, color, description }: CreateTagRequest)
+export async function mutateCreateTag(req: CreateTagRequest)
   : Promise<CreateTagResponse> {
   const response = await fetch(mutateCreateTagURL(), {
     method: 'post',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      userID, name, color, description
-    })
+    body: JSON.stringify(req)
   });
   return await response.json();
 }
@@ -221,6 +220,39 @@ const fetchTagsForTrackURL = (trackID: string, userID: string) => {
 export async function fetchTagsForTrack({ trackID, userID }: TagsForTrackRequest): Promise<TagsForTrackResponse> {
   const response = await fetch(fetchTagsForTrackURL(trackID, userID), {
     method: 'get'
+  });
+  return await response.json();
+}
+
+//
+
+export interface GeneratePlaylistRequest {
+  userID: string,
+  include: number[],
+  exclude: number[],
+  mode: FilterMode,
+  name: string,
+  description?: string,
+}
+
+export interface GeneratePlaylistResponse {
+  url: string,
+  image: Image,
+}
+
+const mutateGeneratePlaylistURL = () => {
+  const url = new URL(`${apiPath}/generate`);
+  return url.href;
+};
+
+export async function mutateGeneratePlaylist(req: GeneratePlaylistRequest, accessToken: string): Promise<GeneratePlaylistResponse> {
+  const response = await fetch(mutateGeneratePlaylistURL(), {
+    method: 'post',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`
+    },
+    body: JSON.stringify(req)
   });
   return await response.json();
 }
