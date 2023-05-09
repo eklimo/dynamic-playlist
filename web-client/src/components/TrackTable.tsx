@@ -3,6 +3,7 @@ import {
   HStack,
   IconButton,
   Image,
+  Link,
   Popover,
   PopoverArrow,
   PopoverBody,
@@ -61,7 +62,7 @@ const MainCell = memo(({ track }: { track: TrackWithTags }) => {
         src={track.album.image.url}
       />
       <Stack spacing='4px'>
-        <Text fontWeight='semibold'>{track.name}</Text>
+        <Link fontWeight='semibold' href={`http://open.spotify.com/track/${track.id}`} isExternal>{track.name}</Link>
         <Text textColor={secondaryTextColor}>{track.artists.join(', ')}</Text>
       </Stack>
     </HStack>
