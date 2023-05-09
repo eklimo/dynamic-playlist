@@ -2,6 +2,10 @@ package com.eklimo.dynamicplaylist.library
 
 import com.fasterxml.jackson.annotation.JsonCreator
 
+data class ExternalURLs(
+  val spotify: String,
+)
+
 data class SavedTrack(
   val track: Track,
 )
