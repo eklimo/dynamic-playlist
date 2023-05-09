@@ -192,7 +192,12 @@ export default function Library() {
 
       <TagsContext.Provider value={Array.from(tags.values()).filter(x => x !== undefined) as Tag[]}>
         <OpenModalContext.Provider value={modal.onOpen}>
-          <TrackTable tracks={tracksWithTags} addTagToTrack={addTagToTrack} removeTagFromTrack={removeTagFromTrack} />
+          <TrackTable
+            editable={true}
+            tracks={tracksWithTags}
+            addTagToTrack={addTagToTrack}
+            removeTagFromTrack={removeTagFromTrack}
+          />
         </OpenModalContext.Provider>
       </TagsContext.Provider>
     </>

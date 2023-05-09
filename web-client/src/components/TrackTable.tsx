@@ -24,7 +24,7 @@ import {
 import { Cell, createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Album, Tag, Track } from '../model';
 import { AddIcon } from '@chakra-ui/icons';
-import { RemoveableTag } from './TrackTag';
+import { NormalTag, RemoveableTag } from './TrackTag';
 import TagAutocomplete from './TagAutocomplete';
 
 type RowType = {
@@ -73,10 +73,11 @@ const AlbumCell = memo(({ album }: { album: Album }) => (
   <>{album.name}</>
 ));
 
-const TagsCell = memo(({ tags, selectTag, removeTag }: {
+const TagsCell = memo(({ tags, selectTag, removeTag, editable }: {
   tags: Tag[]
   selectTag: (tag: Tag) => void
   removeTag: (tag: Tag) => void
+  editable: boolean
 }) => {
   const sortedTags = useMemo(
     () =>
@@ -91,28 +92,32 @@ const TagsCell = memo(({ tags, selectTag, removeTag }: {
 
   return (
     <HStack spacing='8px'>
-      {sortedTags.map(tag => (
+      {sortedTags.map(tag => editable ? (
         <RemoveableTag key={tag.tagID} tag={tag} onRemove={removeTag} />
+      ) : (
+        <NormalTag key={tag.tagID} tag={tag} />
       ))}
-      <WrapItem>
-        <Popover initialFocusRef={initialFocusRef}>
-          <PopoverTrigger>
-            <IconButton
-              className='add-button'
-              aria-label='Add'
-              icon={<AddIcon />}
-              size='xs'
-              variant='ghost'
-            />
-          </PopoverTrigger>
-          <PopoverContent>
-            <PopoverArrow />
-            <PopoverBody p='2px'>
-              <TagAutocomplete initialFocusRef={initialFocusRef} selectTag={selectTag} />
-            </PopoverBody>
-          </PopoverContent>
-        </Popover>
-      </WrapItem>
+      {editable &&
+        <WrapItem>
+          <Popover initialFocusRef={initialFocusRef}>
+            <PopoverTrigger>
+              <IconButton
+                className='add-button'
+                aria-label='Add'
+                icon={<AddIcon />}
+                size='xs'
+                variant='ghost'
+              />
+            </PopoverTrigger>
+            <PopoverContent>
+              <PopoverArrow />
+              <PopoverBody p='2px'>
+                <TagAutocomplete initialFocusRef={initialFocusRef} selectTag={selectTag} />
+              </PopoverBody>
+            </PopoverContent>
+          </Popover>
+        </WrapItem>
+      }
     </HStack>
   );
 });
@@ -148,9 +153,10 @@ interface TrackTableProps {
   tracks: TrackWithTags[];
   addTagToTrack: (tag: Tag, trackID: string) => void;
   removeTagFromTrack: (tag: Tag, trackID: string) => void;
+  editable: boolean;
 }
 
-export default function TrackTable({ tracks, addTagToTrack, removeTagFromTrack }: TrackTableProps) {
+export default function TrackTable({ tracks, addTagToTrack, removeTagFromTrack, editable }: TrackTableProps) {
   const columns = useMemo(
     () => [
       columnHelper.accessor('index', {
@@ -177,12 +183,12 @@ export default function TrackTable({ tracks, addTagToTrack, removeTagFromTrack }
           const selectTag = (tag: Tag) => addTagToTrack(tag, props.getValue().id);
           const removeTag = (tag: Tag) => removeTagFromTrack(tag, props.getValue().id);
           return (
-            <TagsCell tags={props.getValue().tags} selectTag={selectTag} removeTag={removeTag} />
+            <TagsCell tags={props.getValue().tags} selectTag={selectTag} removeTag={removeTag} editable={editable} />
           );
         }
       })
     ],
-    [addTagToTrack, removeTagFromTrack]
+    [addTagToTrack, removeTagFromTrack, editable]
   );
 
   const tableData = useMemo(() => tracks.map(trackToRow), [tracks]);
