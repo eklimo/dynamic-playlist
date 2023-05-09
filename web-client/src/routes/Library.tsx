@@ -1,9 +1,9 @@
-import { Heading, useDisclosure, useToast, UseToastOptions } from '@chakra-ui/react';
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Center, Heading, Spinner, useDisclosure, useToast, UseToastOptions } from '@chakra-ui/react';
+import { useInfiniteQuery, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AddTagToTrackRequest,
   CreateTagRequest,
-  fetchSavedTracks,
+  fetchSavedTracksPaginated,
   fetchTag,
   fetchTagsForTrack,
   fetchTagsForUser,
@@ -16,15 +16,17 @@ import {
   RemoveTagFromTrackRequest,
   UpdateTagRequest
 } from '../fetch';
-import React, { useCallback, useContext, useMemo } from 'react';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import TrackTable, { TrackWithTags } from '../components/TrackTable';
 import { AuthorizationContext } from '../AuthorizationContext';
 import { Tag } from '../model';
 import { TagsContext } from '../TagsContext';
 import CreateTagModal from '../components/CreateTagModal';
 import { OpenModalContext } from '../OpenModalContext';
+import { useWindowVirtualizer } from '@tanstack/react-virtual';
 
 const STALE_TIME = 1000 * 60 * 5;
+const PAGE_SIZE = 50;
 
 export default function Library() {
   const authorizationState = useContext(AuthorizationContext);
@@ -41,7 +43,6 @@ export default function Library() {
     });
   }, [toast]);
 
-  const offset = 0;
   const limit = 50;
 
   const userProfileQuery = useQuery({
@@ -51,12 +52,21 @@ export default function Library() {
     enabled: !!authorizationState
   });
 
-  const savedTracksQuery = useQuery({
+  const savedTracksQuery = useInfiniteQuery({
     queryKey: ['savedTracks'],
-    queryFn: () => fetchSavedTracks(authorizationState!.accessToken, offset, limit),
+    queryFn: ({ pageParam = 0 }) => fetchSavedTracksPaginated(authorizationState!.accessToken, pageParam, limit),
+    getNextPageParam: lastPage => lastPage.nextPageIndex,
     staleTime: STALE_TIME,
     enabled: !!authorizationState
   });
+
+  const totalNumTracks = useMemo(() =>
+      savedTracksQuery.data?.pages[0]?.data.count
+    , [savedTracksQuery.data]);
+
+  const savedTracks = useMemo(() =>
+      authorizationState ? savedTracksQuery.data?.pages.flatMap(page => page.data.tracks) ?? [] : []
+    , [savedTracksQuery.data, authorizationState]);
 
   const tagsForUserQuery = useQuery({
     queryKey: ['tagsForUser'],
@@ -83,7 +93,7 @@ export default function Library() {
     , [tagQueries]);
 
   const tagsForTrackQueries = useQueries({
-    queries: ((savedTracksQuery.data?.items ?? []).map(track => ({
+    queries: (savedTracks.map(track => ({
       queryKey: ['tagsForTrack', track.id],
       queryFn: async () => {
         const x = await fetchTagsForTrack({
@@ -175,31 +185,96 @@ export default function Library() {
   }, [removeTagFromTrackMutation]);
 
   const tracksWithTags = useMemo(() =>
-      savedTracksQuery.data?.items
-        ?.map(track => ({
-          ...track,
-          tags: tagsForTrack.get(track.id)?.map(tagID => tags.get(tagID)!) ?? []
-        } satisfies TrackWithTags)) ?? []
-    , [savedTracksQuery.data, tagsForTrack, tags]);
+      savedTracks?.map(track => ({
+        ...track,
+        tags: tagsForTrack.get(track.id)?.map(tagID => tags.get(tagID)!) ?? []
+      } satisfies TrackWithTags)) ?? []
+    , [tagsForTrack, tags, savedTracks]);
 
   const modal = useDisclosure();
+
+  const allTracks: (TrackWithTags | null | undefined)[] = useMemo(() =>
+      [...tracksWithTags, ...new Array(totalNumTracks).fill(null)]
+    , [tracksWithTags, totalNumTracks]);
+
+  const isRowLoaded = useMemo(() =>
+      allTracks.map((_, index) =>
+        index < (savedTracksQuery.data?.pages.length ?? 0) * PAGE_SIZE)
+    , [allTracks, savedTracksQuery.data?.pages.length]);
+
+  const parentRef = useRef<HTMLDivElement>(null);
+  const parentOffsetRef = useRef(0);
+  useLayoutEffect(() => {
+    parentOffsetRef.current = parentRef.current?.offsetTop ?? 0;
+  }, [userProfileQuery.status]);
+
+  const rowVirtualizer = useWindowVirtualizer({
+    count: allTracks.length,
+    estimateSize: () => 57,
+    overscan: 75,
+    scrollMargin: parentOffsetRef.current
+  });
+
+  const paddingTop =
+    rowVirtualizer.getVirtualItems().length > 0
+      ? rowVirtualizer.getVirtualItems()?.[0]?.start || 0
+      : 0;
+  const paddingBottom =
+    rowVirtualizer.getVirtualItems().length > 0
+      ? rowVirtualizer.getTotalSize() -
+      (rowVirtualizer.getVirtualItems()?.[
+      rowVirtualizer.getVirtualItems().length - 1
+        ]?.end || 0)
+      : 0;
+
+  useEffect(() => {
+    const [lastItem] = [...rowVirtualizer.getVirtualItems()].reverse();
+
+    if (!lastItem) {
+      return;
+    }
+
+    if (
+      lastItem.index >= isRowLoaded.lastIndexOf(true) - 1 &&
+      savedTracksQuery.hasNextPage &&
+      !savedTracksQuery.isFetchingNextPage
+    ) {
+      savedTracksQuery.fetchNextPage();
+    }
+  }, [rowVirtualizer, isRowLoaded, savedTracksQuery]);
 
   return (
     <>
       <Heading fontSize='3xl' fontWeight='semibold' pb='25px'>Library</Heading>
 
-      <CreateTagModal isOpen={modal.isOpen} onCreate={createTag} onClose={modal.onClose} />
+      {userProfileQuery.isLoading ? (
+        <Center>
+          <Spinner color='green.300' thickness='4px' speed='0.65s' size='xl' />
+        </Center>
+      ) : (
+        <>
+          <CreateTagModal isOpen={modal.isOpen} onCreate={createTag} onClose={modal.onClose} />
 
-      <TagsContext.Provider value={Array.from(tags.values()).filter(x => x !== undefined) as Tag[]}>
-        <OpenModalContext.Provider value={modal.onOpen}>
-          <TrackTable
-            editable={true}
-            tracks={tracksWithTags}
-            addTagToTrack={addTagToTrack}
-            removeTagFromTrack={removeTagFromTrack}
-          />
-        </OpenModalContext.Provider>
-      </TagsContext.Provider>
+          <TagsContext.Provider value={Array.from(tags.values()).filter(x => x !== undefined) as Tag[]}>
+            <OpenModalContext.Provider value={modal.onOpen}>
+              <TrackTable
+                tracks={allTracks}
+                addTagToTrack={addTagToTrack}
+                removeTagFromTrack={removeTagFromTrack}
+                editable={true}
+                isRowLoaded={isRowLoaded}
+                paddingTop={paddingTop}
+                paddingBottom={paddingBottom}
+                scrollMargin={rowVirtualizer.options.scrollMargin}
+                rowIndicesToRender={rowVirtualizer
+                  .getVirtualItems()
+                  .map(item => item.index)}
+                parentRef={parentRef}
+              />
+            </OpenModalContext.Provider>
+          </TagsContext.Provider>
+        </>
+      )}
     </>
   );
 }

@@ -28,8 +28,8 @@ export async function fetchUserProfile(accessToken: string): Promise<UserProfile
 //
 
 export interface SavedTracksResponse {
-  total: number,
-  items: Track[]
+  count: number,
+  tracks: Track[]
 }
 
 const fetchSavedTracksURL = (offset: number, limit: number) => {
@@ -47,6 +47,23 @@ export async function fetchSavedTracks(accessToken: string, offset: number, limi
     }
   });
   return await response.json();
+}
+
+export interface SavedTracksPaginatedResponse {
+  data: SavedTracksResponse,
+  nextPageIndex: number
+}
+
+export function fetchSavedTracksPaginated(accessToken: string, pageIndex: number, limit: number): Promise<SavedTracksPaginatedResponse> {
+  return new Promise((resolve, reject) => {
+    fetchSavedTracks(accessToken, pageIndex * limit, limit)
+      .then(res => {
+        resolve({ data: res, nextPageIndex: pageIndex + 1 });
+      })
+      .catch(e => {
+        reject(e);
+      });
+  });
 }
 
 //
